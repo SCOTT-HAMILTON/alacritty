@@ -37,6 +37,7 @@ pub struct StrShortener<'a> {
     text_action: TextAction,
 }
 
+#[allow(clippy::iter_skip_zero)]
 impl<'a> StrShortener<'a> {
     pub fn new(
         text: &'a str,

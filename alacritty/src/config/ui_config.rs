@@ -169,6 +169,7 @@ impl UiConfig {
         let shell = self.shell.clone().map(Into::into);
         PtyOptions {
             shell,
+            xembed_tcp_port: None,
             working_directory: self.working_directory.clone(),
             hold: false,
             env: HashMap::new(),

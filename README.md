@@ -2,112 +2,146 @@
     <img width="200" alt="Alacritty Logo" src="https://raw.githubusercontent.com/alacritty/alacritty/master/extra/logo/compat/alacritty-term%2Bscanlines.png">
 </p>
 
-<h1 align="center">Alacritty - A fast, cross-platform, OpenGL terminal emulator</h1>
+<p align="center">
+      <a href="https://scott-hamilton.mit-license.org/"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-525252.svg?labelColor=292929&logo=creative%20commons&style=for-the-badge" /></a>
+	  <a href="https://github.com/SCOTT-HAMILTON/alacritty/actions"><img alt="Build Status" src="https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FSCOTT-HAMILTON%2Falacritty%2Fbadge&style=for-the-badge" /></a>
+</p>
+
+<h1 align="center">Fork of Alacritty - A fast, cross-platform, OpenGL terminal emulator</h1>
 
 <p align="center">
-  <img alt="Alacritty - A fast, cross-platform, OpenGL terminal emulator"
-       src="extra/promo/alacritty-readme.png">
+  <img width="600"
+       alt="Alacritty - A fast, cross-platform, OpenGL terminal emulator"
+       src="https://user-images.githubusercontent.com/8886672/103264352-5ab0d500-49a2-11eb-8961-02f7da66c855.png">
 </p>
+
+<h3 align="center">Checkout the tabbed fork needed to make this work <a href="https://github.com/SCOTT-HAMILTON/tabbed">here</a></h3>
 
 ## About
 
-Alacritty is a modern terminal emulator that comes with sensible defaults, but
-allows for extensive [configuration](#configuration). By integrating with other
-applications, rather than reimplementing their functionality, it manages to
-provide a flexible set of [features](./docs/features.md) with high performance.
-The supported platforms currently consist of BSD, Linux, macOS and Windows.
+This project is a fork of alacritty. (A name needs to be found tho).
+Alacritty is a very good terminal emulator but there are two things that it lacks before being the perfect terminal emulator in my opinion :
+1. It doesn't support tabs
+2. Tabs don't open in the last working directory of the previous tab
 
-The software is considered to be at a **beta** level of readiness; there are
-a few missing features and bugs to be fixed, but it is already used by many as
-a daily driver.
+I come from KDE Konsole and these are features that I absolutly need.
 
-Precompiled binaries are available from the [GitHub releases page](https://github.com/alacritty/alacritty/releases).
+The first is easily solved with tabbed :
+```shell_session
+ $ tabbed -cr 2 alacritty --embed ""
+```
 
-Join [`#alacritty`] on libera.chat if you have questions or looking for a quick help.
+And the second is solved with this patch that implements the working dir following protocol of tabbed.
+Obviously, upstream tabbed doesn't have such a protocol, you need to use my tabbed fork [tabbed fork]
 
-[`#alacritty`]: https://web.libera.chat/gamja/?channels=#alacritty
 
-## Features
+## How to test it right know ?
 
-You can find an overview over the features available in Alacritty [here](./docs/features.md).
+A nix shell is configured so that you can get this setup running in a few commands.
+This shell builds the tabbed fork and this alacritty fork.
 
-## Further information
+1. First install nix see [https://nixos.org/guides/install-nix.html](https://nixos.org/guides/install-nix.html)
+I higly recommand you to check out the above link but normally this command should be enough :
+```shell_session
+ $ sh <(curl -L https://nixos.org/nix/install) --daemon
+```
+2. Navigate to this repo
+```shell_session
+ $ cd ~/path/to/where/you/cloned/my/alacritty/fork
+```
+3. enter the nix shell :
+```shell_session
+ $ nix-shell
+```
+4. (in the nix shell) build this alacritty fork :
+```shell_session
+ $ cargo build
+```
+5. (still in the nix shell) run the tabbed alacritty :
+```shell_session
+ $ tabbed -cr 2 -w "--xembed-tcp-port" ./target/debug/alacritty --embed ""
+```
+**Bonus for hackers**
+6. (still in the nix shell) run the tabbed alacritty and put debug logs in a separate file :
+```shell_session
+ $ tabbed -cr 2 -w "--xembed-tcp-port" ./target/debug/alacritty --embed "" 2>&1 | ./filter_output.pl 'debug-' debug_logs /dev/stdout 2>&1
+```
 
-- [Announcing Alacritty, a GPU-Accelerated Terminal Emulator](https://jwilm.io/blog/announcing-alacritty/) January 6, 2017
-- [A talk about Alacritty at the Rust Meetup January 2017](https://www.youtube.com/watch?v=qHOdYO3WUTk) January 19, 2017
-- [Alacritty Lands Scrollback, Publishes Benchmarks](https://jwilm.io/blog/alacritty-lands-scrollback/) September 17, 2018
 
-## Installation
+## How does it work ?
 
-Alacritty can be installed by using various package managers on Linux, BSD,
-macOS and Windows.
+[![Flowchart Diagram](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBBW1RhYmJlZCBwYXJlbnQgcHJvY2Vzc11cbiAgICBcbiAgICBBIC0tPnxYSUQgMXwgVEMxW1RhYmJlZCBDbGllbnQgMV1cbiAgICBBIC0tPnxYSUQgMnwgVEMyW1RhYmJlZCBDbGllbnQgMl1cbiAgICBBIC0tPnxYSUQgM3wgVEMzW1RhYmJlZCBDbGllbnQgM11cbiAgICBUQzEgLS0-IEExW0FsYWNyaXR0eSB0YWIgMV1cbiAgICBUQzIgLS0-IEEyW0FsYWNyaXR0eSB0YWIgMl1cbiAgICBUQzMgLS0-IEEzW0FsYWNyaXR0eSB0YWIgM11cbiAgICAiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGFyayJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBBW1RhYmJlZCBwYXJlbnQgcHJvY2Vzc11cbiAgICBcbiAgICBBIC0tPnxYSUQgMXwgVEMxW1RhYmJlZCBDbGllbnQgMV1cbiAgICBBIC0tPnxYSUQgMnwgVEMyW1RhYmJlZCBDbGllbnQgMl1cbiAgICBBIC0tPnxYSUQgM3wgVEMzW1RhYmJlZCBDbGllbnQgM11cbiAgICBUQzEgLS0-IEExW0FsYWNyaXR0eSB0YWIgMV1cbiAgICBUQzIgLS0-IEEyW0FsYWNyaXR0eSB0YWIgMl1cbiAgICBUQzMgLS0-IEEzW0FsYWNyaXR0eSB0YWIgM11cbiAgICAiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGFyayJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)
 
-Prebuilt binaries for macOS and Windows can also be downloaded from the
-[GitHub releases page](https://github.com/alacritty/alacritty/releases).
+When spawning a new alacritty window, tabbed also forks a child process that will communicate with this alacritty window threw Unix Domain Sockets (cf [wiki](https://systemprogrammingatntu.github.io/mp2/unix_socket.html).
+This allows non-blocking bidirectionnal communications between the child process and the alacritty window.
+**A child is referred to as a client in tabbed**
 
-For everyone else, the detailed instructions to install Alacritty can be found
-[here](INSTALL.md).
+Each tabbed client is identified by an XID, which is the X11 Identifier of the alacritty window it's responsible of, (cf [https://metacpan.org/pod/X11::Xlib#DESCRIPTION](https://metacpan.org/pod/X11::Xlib#DESCRIPTION))
 
-### Requirements
 
-- At least OpenGL ES 2.0
-- [Windows] ConPTY support (Windows 10 version 1809 or higher)
+### Authentification Step
 
-## Configuration
+The tabbed client doesn't know its window's XID when spawned, it needs to ask for it.
+[![Tabbed client asking XID from alacritty window](https://mermaid.ink/img/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgVGFiYmVkIENsaWVudCAxLT4-K0FsYWNyaXR0eSBUYWIgMTogSGVsbG8gQWxhY3JpdHR5LCB3aGF0J3MgeW91ciBYMTEgV2luZG93IElkZW50aWZpZXIgP1xuICAgIEFsYWNyaXR0eSBUYWIgMS0tPj4tVGFiYmVkIENsaWVudCAxOiBIaSwgbXkgWElEIGlzIDEzODQxMjAzNC5cbiAgICAgICAgICAgICIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In0sInVwZGF0ZUVkaXRvciI6ZmFsc2V9)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic2VxdWVuY2VEaWFncmFtXG4gICAgVGFiYmVkIENsaWVudCAxLT4-K0FsYWNyaXR0eSBUYWIgMTogSGVsbG8gQWxhY3JpdHR5LCB3aGF0J3MgeW91ciBYMTEgV2luZG93IElkZW50aWZpZXIgP1xuICAgIEFsYWNyaXR0eSBUYWIgMS0tPj4tVGFiYmVkIENsaWVudCAxOiBIaSwgbXkgWElEIGlzIDEzODQxMjAzNC5cbiAgICAgICAgICAgICIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In0sInVwZGF0ZUVkaXRvciI6ZmFsc2V9)
 
-You can find the documentation for Alacritty's configuration in `man 5
-alacritty`, or by looking at [the website] if you do not have the manpages
-installed.
+The messages involved are :
+`XID?` and `XID:138412034`
 
-[the website]: https://alacritty.org/config-alacritty.html
 
-Alacritty doesn't create the config file for you, but it looks for one in the
-following locations:
+### Loop
 
-1. `$XDG_CONFIG_HOME/alacritty/alacritty.toml`
-2. `$XDG_CONFIG_HOME/alacritty.toml`
-3. `$HOME/.config/alacritty/alacritty.toml`
-4. `$HOME/.alacritty.toml`
+Now that the client is authentified, in other words, now that it knows its associated window's XID, it can enter the following two state loops :
 
-On Windows, the config file will be looked for in:
+**The communication loop**
 
-* `%APPDATA%\alacritty\alacritty.toml`
+[![](https://mermaid.ink/img/eyJjb2RlIjoic3RhdGVEaWFncmFtLXYyXG4gICAgc3RhdGUgXCJEaWQgSSByZWNlaXZlIGEgbWVzc2FnZSA_XCIgYXMgVDFcbiAgICBzdGF0ZSBcIklmIGl0J3MgYSBQV0QgQW5zd2VyLCBzYXZlIGl0IGZvciBsYXRlclwiIGFzIFNcblxuICAgIFsqXSAtLT4gVDFcbiAgICBUMSAtLT4gTm9cbiAgICBObyAtLT4gVDFcbiAgICBUMSAtLT4gWWVzXG4gICAgWWVzIC0tPiBTXG4gICAgUyAtLT4gVDFcbiIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In0sInVwZGF0ZUVkaXRvciI6ZmFsc2V9)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic3RhdGVEaWFncmFtLXYyXG4gICAgc3RhdGUgXCJEaWQgSSByZWNlaXZlIGEgbWVzc2FnZSA_XCIgYXMgVDFcbiAgICBzdGF0ZSBcIklmIGl0J3MgYSBQV0QgQW5zd2VyLCBzYXZlIGl0IGZvciBsYXRlclwiIGFzIFNcblxuICAgIFsqXSAtLT4gVDFcbiAgICBUMSAtLT4gTm9cbiAgICBObyAtLT4gVDFcbiAgICBUMSAtLT4gWWVzXG4gICAgWWVzIC0tPiBTXG4gICAgUyAtLT4gVDFcbiIsIm1lcm1haWQiOnsidGhlbWUiOiJkZWZhdWx0In0sInVwZGF0ZUVkaXRvciI6ZmFsc2V9)
 
-## Contributing
+The **PWD** is the shell's working directory of the current focused window.
+It changes each time the user executes a `cd /somewhere/` command.
+The message involved is : `PWD:/home/user`
 
-A guideline about contributing to Alacritty can be found in the
-[`CONTRIBUTING.md`](CONTRIBUTING.md) file.
 
-## FAQ
 
-**_Is it really the fastest terminal emulator?_**
+**The logic loop :**
 
-Benchmarking terminal emulators is complicated. Alacritty uses
-[vtebench](https://github.com/alacritty/vtebench) to quantify terminal emulator
-throughput and manages to consistently score better than the competition using
-it. If you have found an example where this is not the case, please report a
-bug.
+[![](https://mermaid.ink/img/eyJjb2RlIjoic3RhdGVEaWFncmFtLXYyXG4gICAgc3RhdGUgXCJBbSBJIHRoZSBmb2N1c2VkIHRhYiA_XCIgYXMgVDFcbiAgICBzdGF0ZSBcIlNsZWVwIE1vZGVcIiBhcyBTXG4gICAgc3RhdGUgXCJUdXJibyBNb2RlXCIgYXMgVFxuICAgIHN0YXRlIFwiVHJhbnNtaXQgdGhlIHNhdmVkIHNoZWxsIFBXRCB0byB0YWJiZWQgcGFyZW50IHByb2Nlc3MgaWYgYW55IHdhcyByZWNlaXZlZFwiIGFzIFBcbiAgICBzdGF0ZSBcIkFzayB3aW5kb3cgZm9yIHNoZWxsIFBXRFwiIGFzIEExXG5cblxuICAgIFsqXSAtLT4gVDFcbiAgICBUMSAtLT4gTm9cbiAgICBObyAtLT4gU1xuICAgIFMgLS0-IFQxXG4gICAgVDEgLS0-IFllc1xuICAgIFllcyAtLT4gVFxuICAgIFQgLS0-IFBcbiAgICBQIC0tPiBBMVxuICAgIEExIC0tPiBUMSAiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)](https://mermaid-js.github.io/mermaid-live-editor/#/edit/eyJjb2RlIjoic3RhdGVEaWFncmFtLXYyXG4gICAgc3RhdGUgXCJBbSBJIHRoZSBmb2N1c2VkIHRhYiA_XCIgYXMgVDFcbiAgICBzdGF0ZSBcIlNsZWVwIE1vZGVcIiBhcyBTXG4gICAgc3RhdGUgXCJUdXJibyBNb2RlXCIgYXMgVFxuICAgIHN0YXRlIFwiVHJhbnNtaXQgdGhlIHNhdmVkIHNoZWxsIFBXRCB0byB0YWJiZWQgcGFyZW50IHByb2Nlc3MgaWYgYW55IHdhcyByZWNlaXZlZFwiIGFzIFBcbiAgICBzdGF0ZSBcIkFzayB3aW5kb3cgZm9yIHNoZWxsIFBXRFwiIGFzIEExXG5cblxuICAgIFsqXSAtLT4gVDFcbiAgICBUMSAtLT4gTm9cbiAgICBObyAtLT4gU1xuICAgIFMgLS0-IFQxXG4gICAgVDEgLS0-IFllc1xuICAgIFllcyAtLT4gVFxuICAgIFQgLS0-IFBcbiAgICBQIC0tPiBBMVxuICAgIEExIC0tPiBUMSAiLCJtZXJtYWlkIjp7InRoZW1lIjoiZGVmYXVsdCJ9LCJ1cGRhdGVFZGl0b3IiOmZhbHNlfQ)
 
-Other aspects like latency or framerate and frame consistency are more difficult
-to quantify. Some terminal emulators also intentionally slow down to save
-resources, which might be preferred by some users.
+When entering sleep mode, the tabbed client also sends a message informing the window that it should also enter the sleep mode, same goes to the turbo mode.
+These modes are critical for limiting CPU usage.
 
-If you have doubts about Alacritty's performance or usability, the best way to
-quantify terminal emulators is always to test them with **your** specific
-usecases.
+Since the user can change the working directory at anytime, the client has to ask for it constantly.
+And so it needs to transmit the flow of answers to the tabbed parent process.
+This is the **key system** that allows it to follow the working directories.
+Because the tabbed parent process always knows the PWD of the currently focused window's shell, it can spawn a new one at the good location.
 
-**_Why isn't feature X implemented?_**
 
-Alacritty has many great features, but not every feature from every other
-terminal. This could be for a number of reasons, but sometimes it's just not a
-good fit for Alacritty. This means you won't find things like tabs or splits
-(which are best left to a window manager or [terminal multiplexer][tmux]) nor
-niceties like a GUI config editor.
+The messages involved are : `sleep`, `turbo` and `PWD?`
 
-[tmux]: https://github.com/tmux/tmux
 
 ## License
 
 Alacritty is released under the [Apache License, Version 2.0].
+This few patches are released under the [MIT License].
 
-[Apache License, Version 2.0]: https://github.com/alacritty/alacritty/blob/master/LICENSE-APACHE
+
+
+
+
+**References that helped**
+ - [qubes-os markdown conventions] : <https://www.qubes-os.org/doc/doc-guidelines/#markdown-conventions>
+ - [Linux man pages] : <https://linux.die.net/man/>
+ - [TcpStream rust doc] : <https://docs.rs/mio/0.5.1/mio/tcp/struct.TcpStream.html>
+ - [mermaid-js documentation] : <https://mermaid-js.github.io/mermaid/#/stateDiagram>
+
+[//]: # (These are reference links used in the body of this note and get stripped out when the markdown processor does its job. There is no need to format nicely because it shouldn't be seen. Thanks SO - http://stackoverflow.com/questions/4823468/store-comments-in-markdown-syntax)
+
+
+
+   [qubes-os markdown conventions]: <https://www.qubes-os.org/doc/doc-guidelines/#markdown-conventions/>
+   [Linux man pages]: <https://linux.die.net/man/>
+   [TcpStream rust doc]: <https://docs.rs/mio/0.5.1/mio/tcp/struct.TcpStream.html>
+   [mermaid-js documentation]: <https://mermaid-js.github.io/mermaid/#/stateDiagram>
+
+
+[MIT License]: https://scott-hamilton.mit-license.org/
+[tabbed fork]: https://github.com/SCOTT-HAMILTON/tabbed

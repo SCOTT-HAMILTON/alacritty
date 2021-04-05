@@ -151,6 +151,10 @@ fn parse_hex_or_decimal(input: &str) -> Option<u32> {
 /// Terminal specific cli options which can be passed to new windows via IPC.
 #[derive(Serialize, Deserialize, Args, Default, Debug, Clone, PartialEq, Eq)]
 pub struct TerminalOptions {
+    /// Tcp localhost port for xembed communications
+    #[clap(long)]
+    pub xembed_tcp_port: Option<u16>,
+
     /// Start the shell in the specified working directory.
     #[clap(long, value_hint = ValueHint::FilePath)]
     pub working_directory: Option<PathBuf>,
@@ -173,6 +177,10 @@ impl TerminalOptions {
 
     /// Override the [`PtyOptions`]'s fields with the [`TerminalOptions`].
     pub fn override_pty_config(&self, pty_config: &mut PtyOptions) {
+        if let Some(xembed_tcp_port) = &self.xembed_tcp_port {
+            pty_config.xembed_tcp_port = Some(*xembed_tcp_port);
+        }
+
         if let Some(working_directory) = &self.working_directory {
             if working_directory.is_dir() {
                 pty_config.working_directory = Some(working_directory.to_owned());
@@ -192,6 +200,7 @@ impl TerminalOptions {
 impl From<TerminalOptions> for PtyOptions {
     fn from(mut options: TerminalOptions) -> Self {
         PtyOptions {
+            xembed_tcp_port: options.xembed_tcp_port.take(),
             working_directory: options.working_directory.take(),
             shell: options.command().map(Into::into),
             hold: options.hold,

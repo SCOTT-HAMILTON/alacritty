@@ -25,6 +25,9 @@ pub struct Options {
     /// [`None`] will use the default shell.
     pub shell: Option<Shell>,
 
+    /// Tcp localhost port for xembed communications
+    pub xembed_tcp_port: Option<u16>,
+
     /// Shell startup directory.
     pub working_directory: Option<PathBuf>,
 

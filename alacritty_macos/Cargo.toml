@@ -1,0 +1,19 @@
+[package]
+name = "alacritty_macos"
+version = "0.24.1-dev"
+authors = ["Christian Duerr <contact@christianduerr.com>", "Joe Wilm <joe@jwilm.com>"]
+license = "Apache-2.0"
+description = "Macos utils for alacritty"
+readme = "../README.md"
+homepage = "https://alacritty.org"
+repository = "https://github.com/alacritty/alacritty"
+edition = "2021"
+rust-version = "1.70.0"
+
+[dependencies]
+libc = "0.2"
+log = "0.4"
+objc = "0.2.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.25.0"

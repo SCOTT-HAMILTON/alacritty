@@ -9,11 +9,13 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::process::{Child, Command};
-use std::sync::Arc;
+
 use std::{env, ptr};
+use std::sync::Arc;
+use tokio::sync::Notify;
 
 use libc::{c_int, TIOCSCTTY};
-use log::error;
+use log::{error};
 use polling::{Event, PollMode, Poller};
 use rustix_openpty::openpty;
 use rustix_openpty::rustix::termios::Winsize;
@@ -30,6 +32,8 @@ pub(crate) const PTY_READ_WRITE_TOKEN: usize = 0;
 
 // Interest in new child events.
 pub(crate) const PTY_CHILD_EVENT_TOKEN: usize = 1;
+
+mod xembed_tcp_socket;
 
 macro_rules! die {
     ($($arg:tt)*) => {{
@@ -103,6 +107,8 @@ pub struct Pty {
     file: File,
     signals: UnixStream,
     sig_id: SigId,
+    xembed_runtime: Option<tokio::runtime::Runtime>,
+    xembed_shutdown_ntfy: Option<Arc<Notify>>,
 }
 
 impl Pty {
@@ -222,7 +228,7 @@ pub fn from_fd(config: &Options, window_id: u64, master: OwnedFd, slave: OwnedFd
     builder.env("USER", user.user);
     builder.env("HOME", user.home);
     // Set Window ID for clients relying on X11 hacks.
-    builder.env("WINDOWID", window_id);
+    builder.env("WINDOWID", window_id.clone());
     for (key, value) in &config.env {
         builder.env(key, value);
     }
@@ -269,13 +275,33 @@ pub fn from_fd(config: &Options, window_id: u64, master: OwnedFd, slave: OwnedFd
 
     match builder.spawn() {
         Ok(child) => {
+            let (xembed_runtime, xembed_shutdown_ntfy) = match config.xembed_tcp_port {
+                Some(xembed_tcp_port) => {
+                    let xembed_runtime = tokio::runtime::Runtime::new().unwrap();
+                    let shutdown_ntfy = Arc::new(Notify::new());
+                    let copy_shutdown_ntfy = Arc::clone(&shutdown_ntfy);
+                    let child_id = child.id();
+                    xembed_runtime.spawn(async move {
+                        let shutdown = copy_shutdown_ntfy;
+                        let port = xembed_tcp_port;
+                        xembed_tcp_socket::run_tcp_client(
+                            port,
+                            &window_id,
+                            child_id.try_into().unwrap(),
+                            shutdown,
+                        ).await;
+                    });
+                    (Some(xembed_runtime), Some(shutdown_ntfy))
+                },
+                None => (None, None),
+            };
             unsafe {
                 // Maybe this should be done outside of this function so nonblocking
                 // isn't forced upon consumers. Although maybe it should be?
                 set_nonblocking(master_fd);
             }
 
-            Ok(Pty { child, file: File::from(master), signals, sig_id })
+            Ok(Pty { child, file: File::from(master), signals, sig_id, xembed_runtime, xembed_shutdown_ntfy})
         },
         Err(err) => Err(Error::new(
             err.kind(),
@@ -290,6 +316,12 @@ pub fn from_fd(config: &Options, window_id: u64, master: OwnedFd, slave: OwnedFd
 
 impl Drop for Pty {
     fn drop(&mut self) {
+        if let Some(shutdown_ntfy) = &self.xembed_shutdown_ntfy {
+            shutdown_ntfy.notify_waiters();
+        }
+        if let Some(runtime) = self.xembed_runtime.take() {
+            runtime.shutdown_background();
+        }
         // Make sure the PTY is terminated properly.
         unsafe {
             libc::kill(self.child.id() as i32, libc::SIGHUP);
@@ -430,3 +462,4 @@ fn test_get_pw_entry() {
     let mut buf: [i8; 1024] = [0; 1024];
     let _pw = get_pw_entry(&mut buf).unwrap();
 }
+
