@@ -37,6 +37,9 @@ pub struct Config<T> {
     /// Shell startup directory.
     pub working_directory: Option<PathBuf>,
 
+    /// Tcp localhost port for xembed communications
+    pub xembed_tcp_port: Option<u16>,
+
     /// Additional configuration options not directly required by the terminal.
     #[config(flatten)]
     pub ui_config: T,

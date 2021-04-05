@@ -1190,9 +1190,7 @@ impl Display for ShaderCreationError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             ShaderCreationError::Io(err) => write!(f, "Unable to read shader: {}", err),
-            ShaderCreationError::Compile(log) => {
-                write!(f, "Failed compiling shader: {}", log)
-            },
+            ShaderCreationError::Compile(log) => write!(f, "Failed compiling shader: {}", log),
             ShaderCreationError::Link(log) => write!(f, "Failed linking shader: {}", log),
         }
     }

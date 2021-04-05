@@ -30,6 +30,7 @@ pub struct Options {
     pub command: Option<Program>,
     pub hold: bool,
     pub working_directory: Option<PathBuf>,
+    pub xembed_tcp_port: Option<u16>,
     pub config_path: Option<PathBuf>,
     pub config_options: Value,
 }
@@ -47,6 +48,7 @@ impl Default for Options {
             command: None,
             hold: false,
             working_directory: None,
+            xembed_tcp_port: None,
             config_path: None,
             config_options: Value::Null,
         }
@@ -117,6 +119,9 @@ impl Options {
                     .takes_value(true)
                     .help("Start the shell in the specified working directory"),
             )
+            .arg(Arg::with_name("xembed-tcp-port").long("xembed-tcp-port").takes_value(true).help(
+                "Sets the tcp localhost port to use for communication with the xembed container",
+            ))
             .arg(Arg::with_name("config-file").long("config-file").takes_value(true).help(
                 &format!("Specify alternative configuration file [default: {}]", CONFIG_PATH),
             ))
@@ -173,6 +178,10 @@ impl Options {
             options.working_directory = Some(PathBuf::from(dir.to_string()));
         }
 
+        if let Some(port) = matches.value_of("xembed-tcp-port") {
+            options.xembed_tcp_port = Some(port.parse::<u16>().unwrap());
+        }
+
         if let Some(path) = matches.value_of("config-file") {
             options.config_path = Some(PathBuf::from(path.to_string()));
         }
@@ -222,6 +231,9 @@ impl Options {
             } else {
                 error!("Invalid working directory: {:?}", working_directory);
             }
+        }
+        if let Some(xembed_tcp_port) = &self.xembed_tcp_port {
+            config.xembed_tcp_port = Some(xembed_tcp_port.to_owned());
         }
 
         if let Some(command) = &self.command {

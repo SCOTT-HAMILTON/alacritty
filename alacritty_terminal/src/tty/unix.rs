@@ -13,10 +13,11 @@ use std::os::unix::{
 };
 use std::process::{Child, Command, Stdio};
 use std::ptr;
-use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicUsize, Ordering, AtomicBool};
+use std::thread;
 
 use libc::{self, c_int, pid_t, winsize, TIOCSCTTY};
-use log::error;
+use log::{error, info};
 use mio::unix::EventedFd;
 use nix::pty::openpty;
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -28,6 +29,10 @@ use crate::event::OnResize;
 use crate::grid::Dimensions;
 use crate::term::SizeInfo;
 use crate::tty::{ChildEvent, EventedPty, EventedReadWrite};
+
+use std::sync::Arc;
+
+mod xembed_tcp_socket;
 
 /// Process ID of child process.
 ///
@@ -137,6 +142,8 @@ pub struct Pty {
     token: mio::Token,
     signals: Signals,
     signals_token: mio::Token,
+    xembed_thread_running: Option<Arc<AtomicBool>>,
+    xembed_thread_handle: Option<thread::JoinHandle<()>>
 }
 
 #[cfg(target_os = "macos")]
@@ -236,6 +243,35 @@ pub fn new<C>(config: &Config<C>, size: &SizeInfo, window_id: Option<usize>) -> 
             PID.store(child.id() as usize, Ordering::Relaxed);
             FD.store(master, Ordering::Relaxed);
 
+            // Handle communication socket with tabbed
+
+            let (xembed_running, xembed_thread_handle):
+                (Option<Arc<AtomicBool>>, Option<thread::JoinHandle<_>>) =
+                    match &config.xembed_tcp_port {
+                    Some(xembed_tcp_port) => {
+                        let running = Arc::new(AtomicBool::new(true));
+                        let handle: Option<thread::JoinHandle<()>> =
+                            match window_id {
+                            None => {
+                                error!("[error-alacritty] UNIX CAN'T RUN XEMBED \
+                                          CLIENT, NO WINDOW ID !!!");
+                                None
+                            },
+                            Some(wid) => {
+                                let port = *xembed_tcp_port;
+                                let child_id = child.id();
+                                let running_clone = running.clone();
+                                Some(
+                                    thread::spawn(move || {
+                                        xembed_tcp_socket::run_tcp_client(
+                                            port, wid, child_id, running_clone);
+                                    })
+                                )
+                            }
+                        };
+                        (Some(running), handle)
+                    }, None => (None, None)
+                };
             unsafe {
                 // Maybe this should be done outside of this function so nonblocking
                 // isn't forced upon consumers. Although maybe it should be?
@@ -248,11 +284,32 @@ pub fn new<C>(config: &Config<C>, size: &SizeInfo, window_id: Option<usize>) -> 
                 token: mio::Token::from(0),
                 signals,
                 signals_token: mio::Token::from(0),
+                xembed_thread_running: xembed_running,
+                xembed_thread_handle: xembed_thread_handle
             };
             pty.on_resize(size);
             pty
         },
         Err(err) => die!("Failed to spawn command '{}': {}", shell.program(), err),
+    }
+}
+
+impl Drop for Pty {
+    fn drop(&mut self) {
+        if self.xembed_thread_running.is_some() {
+            info!("[log-alacritty] DROP: stopping...");
+            self.xembed_thread_running.take().unwrap()
+                .store(false, Ordering::Relaxed);
+            info!("[log-alacritty] DROP: stopped, waiting...");
+            if self.xembed_thread_handle.is_some() {
+                self.xembed_thread_handle.take().unwrap().join().expect(
+                   "[error-alacritty] failed to join xembed thread...");
+                info!("[log-alacritty] DROP: thread handle joined !");
+            } else {
+                info!("[log-alacritty] DROP: don't wait, invalid thread handle");
+            }
+        }
+           
     }
 }
 
