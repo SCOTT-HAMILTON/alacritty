@@ -10,12 +10,12 @@ use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::process::{Child, Command};
 
-use std::{env, ptr};
 use std::sync::Arc;
+use std::{env, ptr};
 use tokio::sync::Notify;
 
 use libc::{c_int, TIOCSCTTY};
-use log::{error};
+use log::error;
 use polling::{Event, PollMode, Poller};
 use rustix_openpty::openpty;
 use rustix_openpty::rustix::termios::Winsize;
@@ -289,7 +289,8 @@ pub fn from_fd(config: &Options, window_id: u64, master: OwnedFd, slave: OwnedFd
                             &window_id,
                             child_id.try_into().unwrap(),
                             shutdown,
-                        ).await;
+                        )
+                        .await;
                     });
                     (Some(xembed_runtime), Some(shutdown_ntfy))
                 },
@@ -301,7 +302,14 @@ pub fn from_fd(config: &Options, window_id: u64, master: OwnedFd, slave: OwnedFd
                 set_nonblocking(master_fd);
             }
 
-            Ok(Pty { child, file: File::from(master), signals, sig_id, xembed_runtime, xembed_shutdown_ntfy})
+            Ok(Pty {
+                child,
+                file: File::from(master),
+                signals,
+                sig_id,
+                xembed_runtime,
+                xembed_shutdown_ntfy,
+            })
         },
         Err(err) => Err(Error::new(
             err.kind(),
@@ -462,4 +470,3 @@ fn test_get_pw_entry() {
     let mut buf: [i8; 1024] = [0; 1024];
     let _pw = get_pw_entry(&mut buf).unwrap();
 }
-

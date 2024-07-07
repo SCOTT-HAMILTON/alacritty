@@ -161,10 +161,11 @@ fn migrate_renames(config: &mut Value) -> Result<(), String> {
     };
 
     // draw_bold_text_with_bright_colors -> colors.draw_bold_text_with_bright_colors
-    move_value(config_table, &["draw_bold_text_with_bright_colors"], &[
-        "colors",
-        "draw_bold_text_with_bright_colors",
-    ])?;
+    move_value(
+        config_table,
+        &["draw_bold_text_with_bright_colors"],
+        &["colors", "draw_bold_text_with_bright_colors"],
+    )?;
 
     // key_bindings -> keyboard.bindings
     move_value(config_table, &["key_bindings"], &["keyboard", "bindings"])?;

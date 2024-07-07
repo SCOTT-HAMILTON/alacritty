@@ -1,14 +1,14 @@
-use std::str::FromStr;
 use log::{error, info};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use std::sync::Arc;
 
-use tokio::sync::Notify;
-use zeromq::util::PeerIdentity;
-use zeromq::{Socket, SocketOptions, SocketSend, SocketRecv};
 #[cfg(not(windows))]
 use libproc::libproc::proc_pid::pidcwd;
+use tokio::sync::Notify;
+use zeromq::util::PeerIdentity;
+use zeromq::{Socket, SocketOptions, SocketRecv, SocketSend};
 
 const TIMEOUT_SLEEP_MODE_MS: u32 = 1000;
 const TIMEOUT_TURBO_MODE_MS: u32 = 100;
@@ -17,14 +17,14 @@ const TIMEOUT_TURBO_MODE_MS: u32 = 100;
 pub fn get_child_cwd(child_pid: i32) -> Result<PathBuf, String> {
     match pidcwd(child_pid) {
         Ok(cwd) => Ok(cwd),
-        Err(err) => Err(format!("Failed to get the current working directory: {}", err))
+        Err(err) => Err(format!("Failed to get the current working directory: {}", err)),
     }
 }
 
 pub async fn send_message(socket: &mut zeromq::RepSocket, message: String) {
     match socket.send(message.clone().into()).await {
         Ok(_) => {},
-        Err(e) => error!("[error-alacritty] failed to send msg `{}`: {}", message, e)
+        Err(e) => error!("[error-alacritty] failed to send msg `{}`: {}", message, e),
     }
 }
 
@@ -42,10 +42,7 @@ pub async fn handle_message(
         "PWD?" => match get_child_cwd(child_pid) {
             Ok(env) => {
                 let pwd = env.into_os_string().into_string().unwrap();
-                send_message(
-                    socket,
-                    format!("PWD:{}", pwd),
-                ).await;
+                send_message(socket, format!("PWD:{}", pwd)).await;
                 info!("run_tcp_client : sending pwd, {}", pwd);
             },
             Err(e) => {
@@ -78,7 +75,12 @@ pub async fn handle_message(
     }
 }
 
-pub async fn run_tcp_client(port: u16, window_id: &String, child_pid: i32, shutdown_ntfy: Arc<Notify>) {
+pub async fn run_tcp_client(
+    port: u16,
+    window_id: &String,
+    child_pid: i32,
+    shutdown_ntfy: Arc<Notify>,
+) {
     unsafe {
         info!("rust_tcp_client : pid is `{}`", libc::getpid());
     }
@@ -91,7 +93,7 @@ pub async fn run_tcp_client(port: u16, window_id: &String, child_pid: i32, shutd
         Err(_) => {
             error!("[error-alacritty] can't connect to port {}", port);
             return;
-        }
+        },
     }
     info!("run_tcp_client : successfully connected to server in port {}", port);
 
